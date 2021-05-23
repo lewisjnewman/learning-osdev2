@@ -125,7 +125,7 @@ setup_and_enable_paging:
     or eax, 1 << 31              ; Set the PG-bit, which is the 32nd bit (bit 31).
     mov cr0, eax                 ; Set control register 0 to the A-register.
 
-    ; we are now in the 32bit compatability submode 
+    ; we are now in the 32bit compatability submode inside 64bit long mode
     ret
 
 ; Prints `ERR: ` and the given error code to screen and hangs.

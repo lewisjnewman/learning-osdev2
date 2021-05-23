@@ -10,7 +10,7 @@ RMDIR       := rm -r
 MKDIR		:= mkdir -p
 
 OBJ         := cboot/obj
-INCLUDE     := cboot/includes
+INCLUDE     := cboot/include
 SRC         := cboot/src
 ASMSRC      := cboot/asm
 CSRCS       := $(wildcard $(SRC)/*.c)
