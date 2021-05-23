@@ -1,0 +1,7 @@
+
+# Ignore these build artifacts
+/build
+/obj
+*.bin
+*.img
+*.o
