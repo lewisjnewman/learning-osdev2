@@ -92,7 +92,6 @@ setup_and_enable_paging:
     rep stosd
     mov edi, cr3
 
-
     mov DWORD [edi], 0x2003      ; Set the uint32_t at the destination index to 0x2003.
     add edi, 0x1000              ; Add 0x1000 to the destination index.
     mov DWORD [edi], 0x3003      ; Set the uint32_t at the destination index to 0x3003.
@@ -109,6 +108,7 @@ setup_and_enable_paging:
     add edi, 8                   ; Add eight to the destination index.
     loop .SetEntry               ; Set the next entry.
 
+.enable_paging:
     ; enable the pae extension which is required for 64bit long mode
     mov eax, cr4                 ; Set the A-register to control register 4.
     or eax, 1 << 5               ; Set the PAE-bit, which is the 6th bit (bit 5).

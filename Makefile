@@ -10,6 +10,9 @@ all:
 	$(MKDIR) build
 	cp bootloader/mbr.bin build/
 	cp bootloader/cboot.bin build/
+	
+	$(MKDIR) build/rootfs
+	@echo "This is a test file" > build/rootfs/test.txt
 
 disk.img: all
 	dd if=/dev/zero of=disk.img bs=1M count=256
@@ -17,8 +20,8 @@ disk.img: all
 	dd if=./build/mbr.bin of=disk.img conv=notrunc bs=512 count=1
 	dd if=./build/cboot.bin of=disk.img conv=notrunc bs=512 seek=34	
 
-# 	TODO - create a filesystem and place the kernel inside it and copy it onto the disk as well
-	
+	virt-make-fs build/rootfs/ --size=267369472 --type=ext2 rootfs.img
+	dd if=./rootfs.img of=./disk.img bs=512 seek=2048
 
 disk: disk.img
 

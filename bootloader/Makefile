@@ -19,7 +19,7 @@ COBJS       := $(patsubst $(SRC)/%.c,$(OBJ)/%.o,$(CSRCS))
 ASMOBJS     := $(patsubst $(ASMSRC)/%.asm,$(OBJ)/%.o,$(ASMSRCS))
 OBJS        := $(COBJS) $(ASMOBJS)
 CBOOTEXE    := cboot.bin
-CFLAGS      := -I$(INCLUDE) -ffreestanding -nostdlib -Wall -Wextra -Werror -march=x86-64 --target=x86_64-pc-none-elf
+CFLAGS      := -I$(INCLUDE) -ffreestanding -nostdlib -Wall -Wextra -Werror -Wno-unused-parameter -march=x86-64 --target=x86_64-pc-none-elf -mno-sse -mno-red-zone
 LDFLAGS     := -Tcboot/link.ld
 
 all: mbr.bin | $(CBOOTEXE)

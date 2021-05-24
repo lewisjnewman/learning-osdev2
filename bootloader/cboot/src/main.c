@@ -21,6 +21,7 @@ void cboot_main() {
 
     puts("Hello, World from the bootloader\n");
 
+    
     int check = check_read_sectors();
     if(check){
         puts("Error reading mbr from disk\n");
@@ -28,5 +29,9 @@ void cboot_main() {
         puts("Success reading mbr from disk\n");
     }
 
-    while(1) {}
+
+
+    while(1) {
+        __asm__("hlt");
+    }
 }

@@ -52,7 +52,7 @@ void set_background(BiosColours colour){
     background = (colour<<4) & 0x0F;
 }
 
-void _putchar(char c){
+void putc(char c){
     if (column_counter >= VGA_COLS) {
         newline();
     } else if (c == '\n'){
@@ -70,7 +70,7 @@ void _putchar(char c){
 
 void puts(char* s){
     while(*s != '\0') {
-        _putchar(*s);
+        putc(*s);
         s++;
     }
 }

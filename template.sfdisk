@@ -2,9 +2,9 @@ label: gpt
 label-id: 48B7DC9E-BBE6-2C41-A336-086C228F25C1
 device: disk.img
 unit: sectors
-first-lba: 2048
+first-lba: 64
 last-lba: 524254
 sector-size: 512
 
-template.img1 : start=        2048, size=        2048, type=21686148-6449-6E6F-744E-656564454649, uuid=A01B44C9-CC26-8F40-9E87-C6BFEF0B578A
-template.img2 : start=        4096, size=      520159, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=7D3778EF-1D08-BF42-99B4-66CC4F49270A
+template.img1 : start=        64, size=        128, type=21686148-6449-6E6F-744E-656564454649, uuid=A01B44C9-CC26-8F40-9E87-C6BFEF0B578A
+template.img2 : start=        2048, size=      522206, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=7D3778EF-1D08-BF42-99B4-66CC4F49270A
