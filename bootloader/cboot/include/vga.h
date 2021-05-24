@@ -1,3 +1,5 @@
+#ifndef VGA_H
+#define VGA_H
 
 #include <int_types.h>
 
@@ -25,3 +27,5 @@ extern void set_foreground(BiosColours colour);
 extern void set_background(BiosColours colour);
 extern void putc(char c);
 extern void puts(char* s);
+
+#endif 

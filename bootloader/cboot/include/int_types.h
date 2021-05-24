@@ -1,3 +1,6 @@
+#ifndef INT_TYPES_H
+#define INT_TYPES_H
+
 #include <stdint.h>
 
 
@@ -14,3 +17,5 @@ typedef int64_t i64;
 
 typedef intptr_t isize;
 typedef uintptr_t usize;
+
+#endif
