@@ -20,8 +20,7 @@ int check_read_sectors(){
 void cboot_main() {
 
     puts("Hello, World from the bootloader\n");
-
-    
+  
     int check = check_read_sectors();
     if(check){
         puts("Error reading mbr from disk\n");

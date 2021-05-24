@@ -18,10 +18,10 @@ disk.img: all
 	dd if=/dev/zero of=disk.img bs=1M count=256
 	sfdisk ./disk.img < template.sfdisk
 	dd if=./build/mbr.bin of=disk.img conv=notrunc bs=512 count=1
-	dd if=./build/cboot.bin of=disk.img conv=notrunc bs=512 seek=34	
+	dd if=./build/cboot.bin of=disk.img conv=notrunc bs=512 seek=2048	
 
-	virt-make-fs build/rootfs/ --size=267369472 --type=ext2 rootfs.img
-	dd if=./rootfs.img of=./disk.img bs=512 seek=2048
+	virt-make-fs build/rootfs/ --size=132103680 --type=ext2 rootfs.img
+	dd if=./rootfs.img of=./disk.img bs=512 seek=4096
 
 disk: disk.img
 

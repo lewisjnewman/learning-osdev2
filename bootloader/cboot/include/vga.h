@@ -20,10 +20,8 @@ typedef enum{
     WHITE = 0x15,
 } BiosColours;
 
-#define putc _putchar
-
 extern void clear_screen();
 extern void set_foreground(BiosColours colour);
 extern void set_background(BiosColours colour);
-extern void _putchar(char c);
+extern void putc(char c);
 extern void puts(char* s);

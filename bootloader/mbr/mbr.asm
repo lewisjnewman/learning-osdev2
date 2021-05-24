@@ -153,7 +153,7 @@ dap:
 .sectors dw 128          ; number of sectors to read
 .offset  dw 0x0000       ; the offset inside the segment of where to read
 .segment dw 0x7000       ; the segment where to start writing the data to
-.start   dq 34           ; start with sector 34
+.start   dq 2048         ; start with sector 2048
 
 gdt_start:
     dq 0x0
