@@ -12,8 +12,17 @@ all:
 	cp bootloader/cboot.bin build/
 	
 	$(MKDIR) build/rootfs
+	$(MKDIR) build/rootfs/sys
+	$(MKDIR) build/rootfs/cfg
+	$(MKDIR) build/rootfs/bin
+	$(MKDIR) build/rootfs/usr
 	@echo "This is a test file" > build/rootfs/test.txt
 	@echo "Hello World" > build/rootfs/hello.txt
+	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/blob1.dat
+	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/blob2.dat
+	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/bin/blob3.dat
+	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/sys/blob4.dat
+
 
 disk.img: all
 	dd if=/dev/zero of=disk.img bs=1M count=256
@@ -21,7 +30,8 @@ disk.img: all
 	dd if=./build/mbr.bin of=disk.img conv=notrunc bs=512 count=1
 	dd if=./build/cboot.bin of=disk.img conv=notrunc bs=512 seek=2048	
 
-	tar --format=ustar -c ./build/rootfs/ -f rootfs.tar
+
+	cd ./build/rootfs; tar --format=ustar -cf ../../rootfs.tar *
 	dd if=./rootfs.tar of=./disk.img bs=512 seek=4096
 
 disk: disk.img

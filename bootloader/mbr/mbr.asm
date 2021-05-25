@@ -93,7 +93,7 @@ bios_mem_map:
     or ebx, ebx
     jz .end
     add di, 24
-
+    mov DWORD [di+16], 1
     jmp .loop
 .end:
 

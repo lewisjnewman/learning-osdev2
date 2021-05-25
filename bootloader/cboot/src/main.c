@@ -4,6 +4,7 @@
 #include <gpt.h>
 #include <mem.h>
 #include <bios_memory_map.h>
+#include <ustar.h>
 
 GPTEntry find_partition_by_name(char* name){
 
@@ -86,17 +87,20 @@ void print_bios_memmap(){
         switch (memmap->type)
         {
         case BIOS_MAP_FREE_MEMORY:
-            puts(" - FREE MEMORY");
+            puts(" - FREE MEMORY (1)");
             total_memory += memmap->map_size;
             break;
         case BIOS_MAP_RESERVED:
-            puts(" - RESERVED");
+            puts(" - RESERVED (2)");
             break;
         case BIOS_MAP_ACPI_RECLAIM:
-            puts(" - ACPI RECLAIM");
+            puts(" - ACPI RECLAIM (3)");
             break;
         case BIOS_MAP_ACPI_NVS:
-            puts(" - ACPI NVS");
+            puts(" - ACPI NVS (4)");
+            break;
+        case BIOS_BAD_MEMORY:
+            puts(" - BAD MEMORY (5)");
             break;
         default:
             break;
@@ -118,7 +122,6 @@ void cboot_main() {
   
     puts("Bios Physical Memory Maps\n");
     print_bios_memmap();
-    putc('\n');
 
     GPTEntry gpte = find_partition_by_name("OSDEV Root Partition");
 
@@ -126,7 +129,9 @@ void cboot_main() {
         puts("Partition Found, Time to load the operating system\n");
     }
 
-    puts("\nHalting\n");
+    ustar_list_files(gpte);
+
+    puts("Halting");
     while(1) {
         __asm__("hlt");
     }

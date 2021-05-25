@@ -16,6 +16,7 @@ typedef struct{
 #define BIOS_MAP_RESERVED       0x02
 #define BIOS_MAP_ACPI_RECLAIM   0x03
 #define BIOS_MAP_ACPI_NVS       0x04
+#define BIOS_BAD_MEMORY         0x05
 
 //the master boot record places the bios memory map at this address
 #define BIOS_MEMORY_MAP_LOCATION 0x0500
