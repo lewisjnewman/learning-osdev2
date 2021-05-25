@@ -7,4 +7,4 @@ last-lba: 262110
 sector-size: 512
 
 test.img1 : start=        2048, size=        2048, type=21686148-6449-6E6F-744E-656564454649, uuid=F46D8535-BA76-41D3-8172-4319317DDA45, name="CBOOT Bootloader Partition"
-test.img2 : start=        4096, size=      258015, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=ADD87A17-24B4-4D42-927C-F670485E1EBB, name="OSDEV Root Partition"
+test.img2 : start=        4096, size=      258015, type=11111111-2222-3333-4444-555555555555, uuid=ADD87A17-24B4-4D42-927C-F670485E1EBB, name="OSDEV Root Partition"

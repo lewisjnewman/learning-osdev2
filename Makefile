@@ -13,6 +13,7 @@ all:
 	
 	$(MKDIR) build/rootfs
 	@echo "This is a test file" > build/rootfs/test.txt
+	@echo "Hello World" > build/rootfs/hello.txt
 
 disk.img: all
 	dd if=/dev/zero of=disk.img bs=1M count=256
@@ -20,8 +21,8 @@ disk.img: all
 	dd if=./build/mbr.bin of=disk.img conv=notrunc bs=512 count=1
 	dd if=./build/cboot.bin of=disk.img conv=notrunc bs=512 seek=2048	
 
-	virt-make-fs build/rootfs/ --size=132103680 --type=ext2 rootfs.img
-	dd if=./rootfs.img of=./disk.img bs=512 seek=4096
+	tar --format=ustar -c ./build/rootfs/ -f rootfs.tar
+	dd if=./rootfs.tar of=./disk.img bs=512 seek=4096
 
 disk: disk.img
 
@@ -31,4 +32,4 @@ clean:
 	$(MAKE) -C bootloader/ -f Makefile clean;
 
 run: disk.img
-	qemu-system-x86_64 -hda disk.img
+	qemu-system-x86_64 -hda disk.img -m 8G
