@@ -3,14 +3,19 @@ RM	   := rm -f
 RMDIR  := rm -rf
 MKDIR  := mkdir -p
 
-.PHONY := all disk clean run
+.PHONY := all kernel disk clean run
 
-all:
+.FORCE:
+
+
+all: kernel
 	$(MAKE) -C bootloader/
+	$(MAKE) -C kernel
 	$(MKDIR) build
 	cp bootloader/mbr.bin build/
 	cp bootloader/cboot.bin build/
-	
+	cp kernel/target/x86_64/debug/kernel build/kernel.elf
+
 	$(MKDIR) build/rootfs
 	$(MKDIR) build/rootfs/sys
 	$(MKDIR) build/rootfs/cfg
@@ -22,7 +27,7 @@ all:
 	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/blob2.dat
 	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/bin/blob3.dat
 	@dd if=/dev/urandom bs=300 count=1 > build/rootfs/sys/blob4.dat
-
+	@cp build/kernel.elf build/rootfs/sys/kernel.elf
 
 disk.img: all
 	dd if=/dev/zero of=disk.img bs=1M count=256

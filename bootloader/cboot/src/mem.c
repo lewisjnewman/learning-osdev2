@@ -48,3 +48,12 @@ int strncmp(char* s1, char* s2, usize size){
         return ( *(u8*)s1 - *(u8*)s2 );
     }
 }
+
+u64 strncpy(char* dst, char* src, usize sz){
+    u64 counter=0;
+    while(*src != '\0' && counter < sz){
+        *dst++ = *src++;
+        counter++;
+    }
+    return counter;
+}

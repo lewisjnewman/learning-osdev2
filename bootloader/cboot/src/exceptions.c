@@ -3,6 +3,7 @@
 #include <vga.h>
 
 __attribute__((interrupt)) void halting_interrupt_handler(InterruptFrame* frame){
+    puts("UNHANDLED INTERRUPT");
     __asm__ __volatile__("hlt");
 }
 

@@ -15,4 +15,6 @@ extern void memcpy(void* dst, void* src, usize size);
 // (this is not a posix standards compliant implementation but oh well it will do)
 extern int strncmp(char* s1, char* s2, usize size);
 
+extern u64 strncpy(char* dst, char* src, usize size);
+
 #endif

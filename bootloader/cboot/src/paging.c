@@ -30,8 +30,10 @@ void load_newpagetable(void* pt){
 PageTableEntry p3table_physical[512];
 
 // sets up the page tables for mapping 0xFFFF800000000000 to 0x0000000000000000 using 1GB huge pages
-void setup_physical_map(PageTableEntry* p4table, u64 total_memsize){
-    
+void setup_physical_map(u64 total_memsize){
+    // The p4table has already been setup at 0x1000
+    PageTableEntry* p4table = (PageTableEntry*)0x1000;
+
     // we are going to setup a p3 table for the upper memory addresses just after the p2 table
     PageTableEntry* p3table = (PageTableEntry*)0x6000;
 
@@ -113,10 +115,14 @@ void print_pagetable(PageTableEntry* table, usize level){
     }
 }
 
-void setup_higher_half_paging(u64 total_memsize){
-    PageTableEntry* p4table = (PageTableEntry*)0x1000;
-
-    setup_physical_map(p4table, total_memsize);
-    //print_pagetable(p4table, 4);
+VirtAddr virtual_to_physical_address(u64 addr){
+    // we can rely on the fact that the entire physical memory region is going to be 
+    // mapped to the upper memory region starting at 0xFFFF800000000000
+    VirtAddr va;
+    va.raw = addr | 0xFFFF800000000000;
+    return va;
 }
 
+void* virtual_to_physical_pointer(void* ptr){
+    return (void*)virtual_to_physical_address((u64)ptr).raw;
+}
