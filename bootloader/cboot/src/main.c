@@ -5,6 +5,8 @@
 #include <mem.h>
 #include <bios_memory_map.h>
 #include <ustar.h>
+#include <paging.h>
+#include <interrupts.h>
 
 GPTEntry find_partition_by_name(char* name){
 
@@ -72,7 +74,7 @@ GPTEntry find_partition_by_name(char* name){
     return gpte_found;
 }
 
-void print_bios_memmap(){
+u64 scan_bios_memmap(){
     bios_memmap* memmap = (bios_memmap*)BIOS_MEMORY_MAP_LOCATION;
 
     u64 total_memory = 0;
@@ -114,14 +116,17 @@ void print_bios_memmap(){
     putd(total_memory);
     putc('\n');
 
+    return total_memory;
 }
 
+
 void cboot_main() {
+    setup_interrupts();
 
     puts("Hello, World from the bootloader\n");
   
     puts("Bios Physical Memory Maps\n");
-    print_bios_memmap();
+    u64 total_mem = scan_bios_memmap();
 
     GPTEntry gpte = find_partition_by_name("OSDEV Root Partition");
 
@@ -130,6 +135,8 @@ void cboot_main() {
     }
 
     ustar_list_files(gpte);
+
+    setup_higher_half_paging(total_mem);
 
     puts("Halting");
     while(1) {

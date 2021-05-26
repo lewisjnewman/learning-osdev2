@@ -137,6 +137,7 @@ error:
     mov byte  [0xb800a], al
     hlt
 
+
 GDT64:                           ; Global Descriptor Table (64-bit).
     .Null: equ $ - GDT64         ; The null descriptor.
     dw 0xFFFF                    ; Limit (low).

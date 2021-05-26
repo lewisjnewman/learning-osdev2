@@ -59,40 +59,40 @@ void ustar_list_files(GPTEntry gpte) {
         u32 filesize = oct2bin((u8*)buf + 0x7c, 11);
         u32 num_sectors = ((filesize + 511) / 512);
 
-        putc('/');
-        puts(mdata->filename);
+        //putc('/');
+        //puts(mdata->filename);
 
         switch (mdata->type)
         {
         case '\0':
         case NORMAL_FILE:
-            puts(" :file\n");
+            //puts(" :file\n");
             seeker += 1;
             seeker += num_sectors;
             break;
         case HARD_LINK:
-            puts(" :link\n");
+            //puts(" :link\n");
             break;
         case SYM_LINK:
-            puts(" :symlink\n");
+            //puts(" :symlink\n");
             break;
         case CHAR_DEVICE:
-            puts(" :character device\n");
+            //puts(" :character device\n");
             break;
         case BLOCK_DEVICE:
-            puts(" :block device\n");
+            //puts(" :block device\n");
             break;
         case DIRECTORY:
-            puts(" :directory\n");
+            //puts(" :directory\n");
             seeker += 1;
             break;
         case NAMED_PIPE:
-            puts(" :named pipe\n");
+            //puts(" :named pipe\n");
             break;
         default:
-            puts(" :unknown type: ");
-            putx8(mdata->type);
-            putc('\n');
+            //puts(" :unknown type: ");
+            //putx8(mdata->type);
+            //putc('\n');
             break;
         }
 
