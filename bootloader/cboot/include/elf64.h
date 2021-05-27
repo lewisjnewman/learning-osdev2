@@ -14,7 +14,7 @@ typedef struct {
     u16 instruction_set;
     u32 elf_version;
     u64 entry_point;
-    u64 header_table_position;
+    u64 program_header_table_position;
     u64 section_header_table_position;
     u32 flags;
     u16 header_size;

@@ -7,13 +7,13 @@
     "target-c-int-width": "32",
     "os": "none",
     "executables": true,
-    "linker-flavor": "gcc",
-    "linker": "gcc",
+    "linker-flavor": "ld.lld",
+    "linker": "rust-lld",
     "panic-strategy": "abort",
     "disable-redzone": true,
     "features": "-mmx,-sse,+soft-float",
     "pre-link-args": {
-        "gcc": [
+        "ld.lld": [
             "-Tlink.ld"
         ]
     }

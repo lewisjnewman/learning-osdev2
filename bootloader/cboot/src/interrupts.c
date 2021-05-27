@@ -60,12 +60,39 @@ void lidt() {
 }
 
 void setup_interrupts(){
-    for(usize i = 0; i < 32; i++){
-        set_interrupt(i, (u64)halting_interrupt_handler);
-    }
 
+    set_interrupt(0, (u64)div_by_zero_interrupt);
+    set_interrupt(1, (u64)debug_interrupt);
+    set_interrupt(2, (u64)nmi_interrupt);
+    set_interrupt(3, (u64)breakpoint);
+    set_interrupt(4, (u64)overflow_interrupt);
+    set_interrupt(5, (u64)bound_range_exceeded_interrupt);
+    set_interrupt(6, (u64)invalid_opcode_interrupt);
+    set_interrupt(7, (u64)device_not_available_interrupt);
+    set_interrupt(8, (u64)double_fault_interrupt);
+    set_interrupt(9, (u64)coprocessor_segment_overrun_interrupt);
+    set_interrupt(10, (u64)invalid_tss_interrupt);
+    set_interrupt(11, (u64)segment_not_present_interrupt);
+    set_interrupt(12, (u64)stack_segment_fault_interrupt);
+    set_interrupt(13, (u64)general_protection_fault_interrupt);
     set_interrupt(14, (u64)page_fault_handler);
-
+    set_interrupt(15, (u64)halting_interrupt_handler);
+    set_interrupt(16, (u64)x87_fpu_interrupt);
+    set_interrupt(17, (u64)alignment_check_interrupt);
+    set_interrupt(18, (u64)machine_check_interrupt);
+    set_interrupt(19, (u64)simd_floating_point_interrupt);
+    set_interrupt(20, (u64)virtualization_interrupt);
+    set_interrupt(21, (u64)halting_interrupt_handler);
+    set_interrupt(22, (u64)halting_interrupt_handler);
+    set_interrupt(23, (u64)halting_interrupt_handler);
+    set_interrupt(24, (u64)halting_interrupt_handler);
+    set_interrupt(25, (u64)halting_interrupt_handler);
+    set_interrupt(26, (u64)halting_interrupt_handler);
+    set_interrupt(27, (u64)halting_interrupt_handler);
+    set_interrupt(28, (u64)halting_interrupt_handler);
+    set_interrupt(29, (u64)halting_interrupt_handler);
+    set_interrupt(30, (u64)security_exception_interrupt);
+    set_interrupt(31, (u64)halting_interrupt_handler);
 
     lidt();
 }

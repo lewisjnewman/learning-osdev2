@@ -141,7 +141,7 @@ void* allocate_space_for_kernel(){
             // + it's at least PHYSMEM_SIZE
             // + and it's free memory
             // translate it to a virtual address and return a void pointer to it
-            return virtual_to_physical_pointer((void*)memmap->base_address);
+            return physical_to_virtual_pointer((void*)memmap->base_address);
         }
 
         puts("0x");
@@ -163,6 +163,85 @@ void* allocate_space_for_kernel(){
     }
 
     return 0;
+}
+
+
+void* map_kernel(ELF64FileHeader* kernelelf, u64 elfsize){
+    //TODO - fix this up, there are a lot of assumptions about layout of the elf file in this section
+
+    u8* byte_ptr = (u8*)kernelelf;
+
+    // get a pointer to the area in memory after the elf file
+    // aligned up to the next page boundry
+    u8* afterfile = (u8*)((u64)(byte_ptr+elfsize+4096) & ~0x1FFF);
+
+    // Work out where the first program header is
+    byte_ptr += kernelelf->program_header_table_position;
+    ELF64ProgramHeader* ph = (ELF64ProgramHeader*)(byte_ptr);
+
+    // For storing the pointers to and sizes of the segments (there should definitely be less than 64)
+    u8* segment_ptrs[64];
+    u64 segment_sizes[64];
+
+    u64 num_segments = 0;
+
+    // Iterate through the first 3 program headers (in theory this should be .text, .data, .rodata)
+    puts("PROGRAM HEADERS\n");
+    for(usize i = 0; i < kernelelf->program_header_table_entry_count; i++){
+        if(ph->segment_type != 1){
+            // Ignore this segment if it's not a load segment
+            continue;
+        }
+
+        // here we copy the segment data into the area above where the elf file is loaded
+        memcpy(afterfile, byte_ptr+ph->offset, ph->segment_size_file);
+
+        // save a pointer to where the segment data is and it's size for later
+        segment_ptrs[num_segments] = afterfile;
+        segment_sizes[num_segments] = ALIGN_UP_4KB(ph->segment_size_memory);
+
+        // move the afterfile pointer to new free memory
+        afterfile += ALIGN_UP_4KB(ph->segment_size_memory);
+
+        // move the program header pointer forward
+        byte_ptr += kernelelf->program_header_table_entry_size;
+        ph = (ELF64ProgramHeader*)byte_ptr;
+
+        num_segments++;
+    }
+    puts("PROGRAM HEADERS END\n");
+
+    void* entry_point = (void*)kernelelf->entry_point;
+
+    u64 total_size = 0;
+
+    // Copy the segment data back down overwriting the elf file header data
+    for(usize i = 0; i < num_segments; i++){
+        memcpy(byte_ptr, segment_ptrs[i], segment_sizes[i]);
+        byte_ptr += segment_sizes[i];
+        total_size += segment_sizes[i];
+    }
+
+    u64 paddr = (u64)kernelelf & 0x00007FFFFFFFFFFF;
+
+    // setup paging to map the kernel executable area at 0xFFFF900000000000
+    VirtAddr vaddr;
+    vaddr.raw = 0xFFFF900000000000;
+    for(u64 i = 0; i < total_size; i += 0x1000){
+        puts("vaddr = ");
+        putx64(vaddr.raw);
+        puts(" paddr = ");
+        putx64(paddr);
+        putc('\n');
+
+        map_4kb_page(vaddr, paddr);
+
+        vaddr.raw += 0x1000;
+        paddr += 0x1000;
+    }
+
+    // return the entry point
+    return entry_point;
 }
 
 void cboot_main() {
@@ -213,22 +292,29 @@ void cboot_main() {
         puts("Error loading kernel file");
         halt();
     }
+    //else
 
-    puts("Loaded Kernel To ");
-    putx64((u64)kaddr);
-    putc('\n');
-    puts("Loaded ");
-    putd(bytes_loaded);
-    puts(" bytes\n");
+    puts("Loaded Kernel\n");
 
     ELF64FileHeader* kernelelf = (ELF64FileHeader*)kaddr;
-    putx8(kernelelf->magic[0]);
-    putc(' ');
-    putc(kernelelf->magic[1]);
-    putc(kernelelf->magic[2]);
-    putc(kernelelf->magic[3]);
 
-    putc('\n');
+    //check the elf signature
+    int neq = memcmp(kernelelf, "\x7F\x45\x4c\x46", 4);
+
+    if(neq){
+        puts("ERR: ELF signature not matching\n");
+        halt();
+    }
+    //else 
+
+
+
+    // map the kernel sections into the appropriate areas
+    void* entry_point = map_kernel(kernelelf, kernel_filesize);
+
+    // Jump to the kernel
+    void (*kmain)(void) = (void (*)())entry_point;
+    kmain();
 
     halt();
 }

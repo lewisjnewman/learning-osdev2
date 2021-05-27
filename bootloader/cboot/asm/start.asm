@@ -19,6 +19,14 @@ _start:
 BITS 64
 
 x8664_world:
+
+    mov ax, 0
+    mov ss, ax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
     ;call cmain
     call cboot_main
 

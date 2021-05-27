@@ -62,6 +62,14 @@ BIT     NAME                    MEANING
 extern void load_newpagetable(void* pt);
 
 extern void setup_physical_map(u64 total_memsize);
+extern void print_pagetable(PageTableEntry* table, usize level);
+
+extern void map_4kb_page(VirtAddr addr, u64 physical_address);
+extern void map_2mb_page(VirtAddr addr, u64 physical_address);
+
+#define ALIGN_UP_4KB(n) (n+0x1000-(n%0x1000))
+#define ALIGN_UP_2MB(n) (n+0x200000-(n%0x200000))
+#define ALIGN_UP_1GB(n) (n+0x40000000-(n%0x40000000))
 
 /* Memory Map Design
 0x0000000000000000  - bottom of the lower half of memory
@@ -79,7 +87,7 @@ extern void setup_physical_map(u64 total_memsize);
 0xFFFFFFFFFFFFFFFF  - top of the upper half of memory
 */
 
-extern VirtAddr virtual_to_physical_address(u64 addr);
-extern void* virtual_to_physical_pointer(void* ptr);
+extern VirtAddr physical_to_virtual_address(u64 addr);
+extern void* physical_to_virtual_pointer(void* ptr);
 
 #endif

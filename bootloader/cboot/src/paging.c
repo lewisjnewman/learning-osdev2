@@ -26,8 +26,14 @@ void load_newpagetable(void* pt){
 0xFFFFFFFFFFFFFFFF  - top of the upper half of memory
 */
 
-// level 3 page table used for mapping the physical address space into the upper area of memory
-PageTableEntry p3table_physical[512];
+// a simple watermark allocator function for temporarily creating new page tables
+PageTableEntry* new_page_table(){
+    static PageTableEntry* it = (PageTableEntry*)0x6000;
+    PageTableEntry* val = it;
+    memset(val, 0, sizeof(PageTableEntry)*NUM_PAGE_TABLE_ENTRIES);
+    it += NUM_PAGE_TABLE_ENTRIES;
+    return val;
+}
 
 // sets up the page tables for mapping 0xFFFF800000000000 to 0x0000000000000000 using 1GB huge pages
 void setup_physical_map(u64 total_memsize){
@@ -35,7 +41,7 @@ void setup_physical_map(u64 total_memsize){
     PageTableEntry* p4table = (PageTableEntry*)0x1000;
 
     // we are going to setup a p3 table for the upper memory addresses just after the p2 table
-    PageTableEntry* p3table = (PageTableEntry*)0x6000;
+    PageTableEntry* p3table = new_page_table();
 
     // clear the entire page table
     memset(p3table, 0, PAGETABLE_SIZE);
@@ -115,7 +121,7 @@ void print_pagetable(PageTableEntry* table, usize level){
     }
 }
 
-VirtAddr virtual_to_physical_address(u64 addr){
+VirtAddr physical_to_virtual_address(u64 addr){
     // we can rely on the fact that the entire physical memory region is going to be 
     // mapped to the upper memory region starting at 0xFFFF800000000000
     VirtAddr va;
@@ -123,6 +129,113 @@ VirtAddr virtual_to_physical_address(u64 addr){
     return va;
 }
 
-void* virtual_to_physical_pointer(void* ptr){
-    return (void*)virtual_to_physical_address((u64)ptr).raw;
+void* physical_to_virtual_pointer(void* ptr){
+    return (void*)physical_to_virtual_address((u64)ptr).raw;
 }
+
+void map_4kb_page(VirtAddr addr, u64 physical_address){
+    PageTableEntry* p4table = (PageTableEntry*)0x1000;
+    
+
+    PageTableEntry* p3table;
+    if(!p4table[addr.l4_index].present){
+        // p3 table not present
+
+        // allocate a new page table
+        p3table = new_page_table();
+
+        // set the address in the level 4 table
+        SET_PTE_ADDRESS(p4table[addr.l4_index], (u64)p3table);
+        p4table[addr.l4_index].present = 1;
+        p4table[addr.l4_index].writable = 1;
+
+    } else {
+        // p3 table present
+        p3table = (PageTableEntry*)GET_PTE_ADDRESS(p4table[addr.l4_index]);
+    }
+
+    PageTableEntry* p2table;
+    if(!p3table[addr.l3_index].present){
+        //p2 table not present
+
+        // allocate a new page table
+        p2table = new_page_table();
+
+        // set the address in the level 3 table
+        SET_PTE_ADDRESS(p3table[addr.l3_index], (u64)p2table);
+        p3table[addr.l3_index].present = 1;
+        p3table[addr.l3_index].writable = 1;
+    } else {
+        // p2 table present
+        p2table = (PageTableEntry*)GET_PTE_ADDRESS(p3table[addr.l3_index]);
+    }
+    
+    PageTableEntry* p1table;
+    if(!p2table[addr.l2_index].present){
+        //p1 table not present
+
+        // allocate a new page table
+        p1table = new_page_table();
+
+        // set the address in the level 2 table
+        SET_PTE_ADDRESS(p2table[addr.l2_index], (u64)p1table);
+        p2table[addr.l2_index].present = 1;
+        p2table[addr.l2_index].writable = 1;
+    } else {
+        // p1 table present
+        p1table = (PageTableEntry*)GET_PTE_ADDRESS(p2table[addr.l2_index]);
+    }
+
+    // set the entry in the level 1 page table
+    p1table[addr.l1_index].raw = 0;
+    SET_PTE_ADDRESS(p1table[addr.l1_index], physical_address);
+    p1table[addr.l1_index].present = 1;
+    p1table[addr.l1_index].writable = 1;
+}
+
+
+
+void map_2mb_page(VirtAddr addr, u64 physical_address){
+    PageTableEntry* p4table = (PageTableEntry*)0x1000;
+    
+    PageTableEntry* p3table;
+    if(!p4table[addr.l4_index].present){
+        // p3 table not present
+
+        // allocate a new page table
+        p3table = new_page_table();
+
+        // set the address in the level 4 table
+        SET_PTE_ADDRESS(p4table[addr.l4_index], (u64)p3table);
+        p4table[addr.l4_index].present = 1;
+        p4table[addr.l4_index].writable = 1;
+
+    } else {
+        // p3 table present
+        p3table = (PageTableEntry*)GET_PTE_ADDRESS(p4table[addr.l4_index]);
+    }
+
+    PageTableEntry* p2table;
+    if(!p3table[addr.l3_index].present){
+        //p2 table not present
+
+        // allocate a new page table
+        p2table = new_page_table();
+
+        // set the address in the level 4 table
+        SET_PTE_ADDRESS(p3table[addr.l3_index], (u64)p2table);
+        p3table[addr.l3_index].present = 1;
+        p3table[addr.l3_index].writable = 1;
+    } else {
+        // p2 table present
+        p2table = (PageTableEntry*)GET_PTE_ADDRESS(p3table[addr.l3_index]);
+    }
+
+    // set the entry in the level 2 page table as a huge page
+    p2table[addr.l2_index].raw = 0;
+    SET_PTE_ADDRESS(p2table[addr.l2_index], physical_address);
+    p2table[addr.l2_index].present = 1;
+    p2table[addr.l2_index].writable = 1;
+    p2table[addr.l2_index].huge_page = 1;
+}
+

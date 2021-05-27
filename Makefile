@@ -15,6 +15,7 @@ all: kernel
 	cp bootloader/mbr.bin build/
 	cp bootloader/cboot.bin build/
 	cp kernel/target/x86_64/debug/kernel build/kernel.elf
+	strip --strip-debug build/kernel.elf
 
 	$(MKDIR) build/rootfs
 	$(MKDIR) build/rootfs/sys
@@ -45,6 +46,7 @@ clean:
 	$(RMDIR) build/
 	$(RM) disk.img
 	$(MAKE) -C bootloader/ -f Makefile clean;
+	$(MAKE) -C kernel/ -f Makefile clean;
 
 run: disk.img
-	qemu-system-x86_64 -hda disk.img -m 8G
+	qemu-system-x86_64 -hda disk.img -m 8G -d int -no-reboot
