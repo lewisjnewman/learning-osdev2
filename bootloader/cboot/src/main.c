@@ -10,6 +10,7 @@
 #include <elf64.h>
 #include <print.h>
 #include <serial.h>
+#include <md5.h>
 
 void halt();
 
@@ -124,9 +125,8 @@ u64 scan_bios_memmap(){
     return total_memory;
 }
 
-void* allocate_space_for_kernel(){
+void* allocate_space_for_kernel(usize mem_size){
     const int MINBASE = 0x100000;       // make sure we load the kernel above the 1MB area
-    const int PHYSMEM_SIZE = 100663296; // make sure the area we allocate is at least 96MB in size
 
     bios_memmap* memmap = (bios_memmap*)BIOS_MEMORY_MAP_LOCATION;
 
@@ -135,12 +135,12 @@ void* allocate_space_for_kernel(){
         if(memmap->base_address < MINBASE){
             memmap++;
             continue;
-        } else if (memmap->map_size < PHYSMEM_SIZE){
+        } else if (memmap->map_size < mem_size){
             memmap++;
             continue;
         } else if (memmap->type == BIOS_MAP_FREE_MEMORY){
             // + it's above MINBASE
-            // + it's at least PHYSMEM_SIZE
+            // + it's at least mem_size
             // + and it's free memory
             // translate it to a virtual address and return a void pointer to it
             return physical_to_virtual_pointer((void*)memmap->base_address);
@@ -167,83 +167,56 @@ void* allocate_space_for_kernel(){
     return 0;
 }
 
+void* map_kernel(u8* elf_file, u8* code_buffer){
+    ELF64FileHeader* elf_header = (ELF64FileHeader*)elf_file;
 
-void* map_kernel(ELF64FileHeader* kernelelf, u64 elfsize){
-    //TODO - fix this up, there are a lot of assumptions about layout of the elf file in this section
+    u8* phdr_it = elf_file + elf_header->program_header_table_position;
 
-    u8* byte_ptr = (u8*)kernelelf;
+    // Program header counter
+    usize phdr_counter = 0;
+    puts("Program Headers:\n");
+    puts("  Type           Offset             VirtAddr           PhysAddr\n");
+    puts("                 FileSiz            MemSiz              Flags  Align\n");
+    do {
+        ELF64ProgramHeader* elf_phdr = (ELF64ProgramHeader*)phdr_it;
 
-    // get a pointer to the area in memory after the elf file
-    // aligned up to the next page boundry
-    u8* afterfile = (u8*)((u64)(byte_ptr+elfsize+4096) & ~0x1FFF);
+        if(elf_phdr->type == 1){
+            //This is a load segment - we need to load it
 
-    // Work out where the first program header is
-    byte_ptr += kernelelf->program_header_table_position;
-    ELF64ProgramHeader* ph = (ELF64ProgramHeader*)(byte_ptr);
+            puts("  LOAD           0x");
+            putx64(elf_phdr->offset);
+            puts(" 0x");
+            putx64(elf_phdr->vaddr);
+            puts(" 0x");
+            putx64(elf_phdr->paddr);
+            puts("\n                 0x");
+            putx64(elf_phdr->filesz);
+            puts(" 0x");
+            putx64(elf_phdr->memsz);
+            puts("         0x");
+            putx16((u16)elf_phdr->align);
+            putc('\n');
 
-    // For storing the pointers to and sizes of the segments (there should definitely be less than 64)
-    u8* segment_ptrs[64];
-    u64 segment_sizes[64];
+            //copy the segment data into the code buffer
+            memcpy(code_buffer+elf_phdr->offset-elf_phdr->align, elf_file + elf_phdr->offset, elf_phdr->filesz);
+            
+            // calculate the number of pages we are going to need to map this data
+            usize num_pages = ALIGN_UP_4KB(elf_phdr->memsz)/0x1000;
 
-    u64 num_segments = 0;
+            //map the data in the code buffer to the specified vaddr
+            for(usize i = 0; i < num_pages; i++){
+                VirtAddr vaddr;
+                vaddr.raw = elf_phdr->vaddr + 0x1000*i;
+                map_4kb_page(vaddr, (u64)code_buffer+elf_phdr->offset-elf_phdr->align & (~0xFFFFE00000000FFF));
+            }
 
-    // Iterate through the first 3 program headers (in theory this should be .text, .data, .rodata)
-    puts("PROGRAM HEADERS\n");
-    for(usize i = 0; i < kernelelf->program_header_table_entry_count; i++){
-        if(ph->segment_type != 1){
-            // Ignore this segment if it's not a load segment
-            continue;
         }
 
-        // here we copy the segment data into the area above where the elf file is loaded
-        memcpy(afterfile, byte_ptr+ph->offset, ph->segment_size_file);
+        phdr_it += elf_header->program_header_table_entry_size;
+        phdr_counter++;
+    } while(phdr_counter < elf_header->program_header_table_entry_count);
 
-        // save a pointer to where the segment data is and it's size for later
-        segment_ptrs[num_segments] = afterfile;
-        segment_sizes[num_segments] = ALIGN_UP_4KB(ph->segment_size_memory);
-
-        // move the afterfile pointer to new free memory
-        afterfile += ALIGN_UP_4KB(ph->segment_size_memory);
-
-        // move the program header pointer forward
-        byte_ptr += kernelelf->program_header_table_entry_size;
-        ph = (ELF64ProgramHeader*)byte_ptr;
-
-        num_segments++;
-    }
-    puts("PROGRAM HEADERS END\n");
-
-    void* entry_point = (void*)kernelelf->entry_point;
-
-    u64 total_size = 0;
-
-    // Copy the segment data back down overwriting the elf file header data
-    for(usize i = 0; i < num_segments; i++){
-        memcpy(byte_ptr, segment_ptrs[i], segment_sizes[i]);
-        byte_ptr += segment_sizes[i];
-        total_size += segment_sizes[i];
-    }
-
-    u64 paddr = (u64)kernelelf & 0x00007FFFFFFFFFFF;
-
-    // setup paging to map the kernel executable area at 0xFFFF900000000000
-    VirtAddr vaddr;
-    vaddr.raw = 0xFFFF900000000000;
-    for(u64 i = 0; i < total_size; i += 0x1000){
-        puts("vaddr = ");
-        putx64(vaddr.raw);
-        puts(" paddr = ");
-        putx64(paddr);
-        putc('\n');
-
-        map_4kb_page(vaddr, paddr);
-
-        vaddr.raw += 0x1000;
-        paddr += 0x1000;
-    }
-
-    // return the entry point
-    return entry_point;
+    return (void*)elf_header->entry_point;
 }
 
 void cboot_main() {
@@ -278,8 +251,13 @@ void cboot_main() {
         putc('\n');
     }
 
-    // Find a place in memory to load the kernel file (kaddr is a virtual address in 0xFFFF8...)
-    void* kaddr = allocate_space_for_kernel();
+    // Find a place in memory to load the kernel file (kaddr is a virtual address starting with 0xFFFF8...)
+    // Allocate 256mb
+    u8* kaddr = (u8*)allocate_space_for_kernel(268435456);
+    memset(kaddr, 0, 268435456);
+
+    // we will use the bottom 96mb to load the elf file - and the remaining space will be used for the executable data
+    u8* exe = kaddr + 100663296;
 
     if(kaddr == 0){
         puts("Not Enough Memory to Load Kernel\n");
@@ -289,7 +267,7 @@ void cboot_main() {
 
     puts("Loading kernel\n");
 
-    u64 bytes_loaded = ustar_load_file(gpte, "/sys/kernel.elf", (u8*)kaddr);
+    u64 bytes_loaded = ustar_load_file(gpte, "/sys/kernel.elf", kaddr);
 
     if(bytes_loaded==0){
         puts("Error loading kernel file");
@@ -299,10 +277,8 @@ void cboot_main() {
 
     puts("Loaded Kernel\n");
 
-    ELF64FileHeader* kernelelf = (ELF64FileHeader*)kaddr;
-
     //check the elf signature
-    int neq = memcmp(kernelelf, "\x7F\x45\x4c\x46", 4);
+    int neq = memcmp(kaddr, "\x7F\x45\x4c\x46", 4);
 
     if(neq){
         puts("ERR: ELF signature not matching\n");
@@ -310,13 +286,32 @@ void cboot_main() {
     }
     //else 
 
+    // calculate the md5sum of the kernel.elf file
+    MD5_CTX ctx; u8 md5sum[16];
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, kaddr, bytes_loaded);
+    MD5_Final(md5sum,&ctx);
+    
+    // kernel image
+    puts("md5sum(kernel.elf) = ");
+    hexdump(md5sum, 16);
+    putc('\n');
 
+    void* entry_point = map_kernel(kaddr, exe);
 
-    // map the kernel sections into the appropriate areas
-    void* entry_point = map_kernel(kernelelf, kernel_filesize);
+    puts("entry point = ");
+    putx64((u64)entry_point);
+    putc('\n');
+
+    puts("hexdump at entry point: ");
+    hexdump((u8*)entry_point, 32);
+    putc('\n');
+
+    puts("KERNEL MAPPED, JUMPING TO KERNEL\n");
+
 
     // Jump to the kernel
-    void (*kmain)(void) = (void (*)())entry_point;
+    void(*kmain)(void) = (void (*)())entry_point;
     kmain();
 
     halt();

@@ -111,10 +111,26 @@ __attribute__((interrupt)) void page_fault_handler(InterruptFrame* frame, u64 er
         "mov %%rax, %0\n\t"
         : "=m" (cr3)
     );
+    VirtAddr vaddr;
+    vaddr.raw = cr2;
 
 
     puts("CR2 = ");
     putx64(cr2);
+    putc('\n');
+    puts("l4-index = ");
+    putd(vaddr.l4_index);
+    putc('\n');
+    puts("l3-index = ");
+    putd(vaddr.l3_index);
+    putc('\n');
+    puts("l2-index = ");
+    putd(vaddr.l2_index);
+    putc('\n');
+    puts("l1-index = ");
+    putd(vaddr.l1_index);
+    putc('\n');
+
 
     print_pagetable((PageTableEntry*)cr3, 4);
 

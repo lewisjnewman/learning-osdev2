@@ -12,6 +12,8 @@ extern void putx16(u16 i);
 extern void putx32(u32 i);
 extern void putx64(u64 i);
 
+extern void hexdump(u8* buf, usize size);
+
 // for printing out integers to the screen in decimal
 extern void putd(u64 i);
 

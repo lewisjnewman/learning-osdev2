@@ -10,7 +10,7 @@ void memset(void* dst, u8 val, usize size){
 
 // returns 0 if they are equal - 1 if they are not
 // (this is not a posix standards compliant implementation but oh well it will do)
-int memcmp(void* s1, void* s2, usize size){
+int memcmp(const void* s1, const void* s2, usize size){
     u8* b1 = (u8*)s1;
     u8* b2 = (u8*)s2;
 
@@ -22,7 +22,7 @@ int memcmp(void* s1, void* s2, usize size){
     return 0;
 }
 
-void memcpy(void* dst, void* src, usize size){
+void memcpy(void* dst, const void* src, usize size){
     u8* dst_it = (u8*)dst;
     u8* src_it = (u8*)src;
 
@@ -32,7 +32,7 @@ void memcpy(void* dst, void* src, usize size){
 }
 
 
-int strncmp(char* s1, char* s2, usize size){
+int strncmp(const char* s1, const char* s2, usize size){
     while ( size && *s1 && ( *s1 == *s2 ) )
     {
         ++s1;
@@ -49,7 +49,7 @@ int strncmp(char* s1, char* s2, usize size){
     }
 }
 
-u64 strncpy(char* dst, char* src, usize sz){
+u64 strncpy(char* dst, const char* src, usize sz){
     u64 counter=0;
     while(*src != '\0' && counter < sz){
         *dst++ = *src++;

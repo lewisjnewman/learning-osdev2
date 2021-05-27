@@ -67,3 +67,15 @@ void putd(u64 val){
     for(; val; val/=10) *--s = '0' + val%10;
     puts(s);
 }
+
+void hexdump(u8* buf, usize size){
+    for(usize i = 1; i <= size; i++){
+        putx8(buf[i-1]);
+        if(i%32==0){
+            putc('\n');
+        }
+        else if(i%2==0){
+            putc(' ');
+        }
+    }
+}

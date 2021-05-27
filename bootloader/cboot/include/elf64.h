@@ -26,14 +26,14 @@ typedef struct {
 } __attribute__((packed)) ELF64FileHeader;
 
 typedef struct {
-    u32 segment_type;
+    u32 type;
     u32 flags;
     u64 offset;
     u64 vaddr;
-    u64 _undefined;
-    u64 segment_size_file;
-    u64 segment_size_memory;
-    u64 required_alignment;
+    u64 paddr;
+    u64 filesz;
+    u64 memsz;
+    u64 align;
 } __attribute__((packed)) ELF64ProgramHeader;
 
 #endif

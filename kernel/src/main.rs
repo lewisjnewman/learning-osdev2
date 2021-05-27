@@ -1,24 +1,37 @@
 #![no_std]
 #![no_main]
+#![feature(asm)]
 
 use core::panic::PanicInfo;
 
-static HELLO: &[u8] = b"Hello From The Kernel!";
+use uart_16550::SerialPort;
+
+const IOPORTNUM: u16 = 0x3F8;
+
+static HELLO_WORLD: &[u8] = b"Hello World From The Kernel";
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 
-    let vga_buffer = (0xFFFF800000000000u64|0xb8000u64) as *mut u8;
+    let mut serial_port = unsafe { SerialPort::new(IOPORTNUM) };
+    serial_port.init();
 
-    for (i, &byte) in HELLO.iter().enumerate() {
+    for byte in HELLO_WORLD {
+        serial_port.send(*byte);
+    }
+
+    let vga_buffer = 0xb8000 as *mut u8;
+
+    for (i, &byte) in HELLO_WORLD.iter().enumerate() {
         unsafe {
             *vga_buffer.offset(i as isize * 2) = byte;
             *vga_buffer.offset(i as isize * 2 + 1) = 0x1F;
         }
     }
-    
 
-    loop {}
+    loop {
+        unsafe {asm!("hlt")};
+    }
 }
 
 #[panic_handler]
