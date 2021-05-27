@@ -8,6 +8,8 @@
 #include <paging.h>
 #include <interrupts.h>
 #include <elf64.h>
+#include <print.h>
+#include <serial.h>
 
 void halt();
 
@@ -246,6 +248,7 @@ void* map_kernel(ELF64FileHeader* kernelelf, u64 elfsize){
 
 void cboot_main() {
     setup_interrupts();
+    init_serial();
 
     puts("Hello, World from the bootloader\n");
   

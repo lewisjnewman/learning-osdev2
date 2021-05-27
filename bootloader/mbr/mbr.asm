@@ -152,7 +152,7 @@ dap:
          db 0            ; unused field
 .sectors dw 128          ; number of sectors to read
 .offset  dw 0x0000       ; the offset inside the segment of where to read
-.segment dw 0x7000       ; the segment where to start writing the data to
+.segment dw 0x1000       ; the segment where to start writing the data to
 .start   dq 2048         ; start with sector 2048
 
 gdt_start:
@@ -183,7 +183,7 @@ DATA_SEG equ gdt_data - gdt_start
 
 BITS 32
 end:
-    jmp 0x70000
+    jmp 0x10000
 
 times 510 - ($-$$) db 0
 dw 0xAA55

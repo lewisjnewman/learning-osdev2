@@ -1,6 +1,6 @@
 #include <ustar.h>
 #include <ata.h>
-#include <vga.h>
+#include <print.h>
 #include <mem.h>
 
 u64 oct2bin(unsigned char *str, u64 size) {

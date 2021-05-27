@@ -22,19 +22,10 @@ typedef enum{
     WHITE = 0x15,
 } BiosColours;
 
+extern void draw_char(char c);
+
 extern void clear_screen();
 extern void set_foreground(BiosColours colour);
 extern void set_background(BiosColours colour);
-extern void putc(char c);
-extern void puts(char* s);
-
-//functions for printing out integers to the screen in hex
-extern void putx8(u8 i);
-extern void putx16(u16 i);
-extern void putx32(u32 i);
-extern void putx64(u64 i);
-
-// for printing out integers to the screen in decimal
-extern void putd(u64 i);
 
 #endif

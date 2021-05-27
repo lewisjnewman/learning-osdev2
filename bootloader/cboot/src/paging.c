@@ -1,6 +1,6 @@
 #include <paging.h>
 #include <mem.h>
-#include <vga.h>
+#include <print.h>
 
 void load_newpagetable(void* pt){
     u64 temp = (u64)pt;
@@ -28,7 +28,7 @@ void load_newpagetable(void* pt){
 
 // a simple watermark allocator function for temporarily creating new page tables
 PageTableEntry* new_page_table(){
-    static PageTableEntry* it = (PageTableEntry*)0x6000;
+    static PageTableEntry* it = (PageTableEntry*)0x20000;
     PageTableEntry* val = it;
     memset(val, 0, sizeof(PageTableEntry)*NUM_PAGE_TABLE_ENTRIES);
     it += NUM_PAGE_TABLE_ENTRIES;
@@ -100,6 +100,10 @@ void print_pagetable(PageTableEntry* table, usize level){
         }
         //else
 
+        for(usize i = 4; i > level; i--){
+            putc(' ');
+        }
+
         puts("PT");
         putd(level);
         putc('[');
@@ -107,7 +111,7 @@ void print_pagetable(PageTableEntry* table, usize level){
         putc(']');
         puts(" = ");
         putx64(pte.raw);
-        puts("; addr = ");
+        puts("; paddr = ");
         putx64(GET_PTE_ADDRESS(pte));
         putc('\n');
 

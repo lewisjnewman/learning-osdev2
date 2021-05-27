@@ -49,4 +49,5 @@ clean:
 	$(MAKE) -C kernel/ -f Makefile clean;
 
 run: disk.img
-	qemu-system-x86_64 -hda disk.img -m 8G -d int -no-reboot
+	qemu-system-x86_64 -hda disk.img -m 8G -no-reboot \
+	-chardev stdio,id=char0,logfile=serial.log,signal=off -serial chardev:char0

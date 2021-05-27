@@ -1,7 +1,7 @@
 #include <int_types.h>
 #include <exceptions.h>
 #include <paging.h>
-#include <vga.h>
+#include <print.h>
 
 __attribute__((interrupt)) void halting_interrupt_handler(InterruptFrame* frame){
     puts("UNHANDLED INTERRUPT");
@@ -77,6 +77,17 @@ __attribute__((interrupt)) void general_protection_fault_interrupt(InterruptFram
     puts("rip = ");
     putx64(frame->rip);
     putc('\n');
+
+
+    u64 cr3;
+    __asm__ __volatile__(
+        "mov %%cr3, %%rax\n\t"
+        "mov %%rax, %0\n\t"
+        : "=m" (cr3)
+    );
+
+    print_pagetable((PageTableEntry*)cr3, 4);
+
     __asm__ __volatile__("hlt");
 }
 

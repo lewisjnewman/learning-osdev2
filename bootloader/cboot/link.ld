@@ -1,7 +1,7 @@
 ENTRY(_start)
 OUTPUT_FORMAT("binary")
 SECTIONS {
-    . = 0x70000;
+    . = 0x10000;
     .text :
     {
         *(.boot)
