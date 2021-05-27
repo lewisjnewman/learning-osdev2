@@ -11,6 +11,7 @@
 #include <print.h>
 #include <serial.h>
 #include <md5.h>
+#include <bootinfo.h>
 
 void halt();
 
@@ -81,7 +82,7 @@ GPTEntry find_partition_by_name(char* name){
 }
 
 u64 scan_bios_memmap(){
-    bios_memmap* memmap = (bios_memmap*)BIOS_MEMORY_MAP_LOCATION;
+    BiosMemoryRegion* memmap = (BiosMemoryRegion*)BIOS_MEMORY_MAP_LOCATION;
 
     u64 total_memory = 0;
 
@@ -128,7 +129,7 @@ u64 scan_bios_memmap(){
 void* allocate_space_for_kernel(usize mem_size){
     const int MINBASE = 0x100000;       // make sure we load the kernel above the 1MB area
 
-    bios_memmap* memmap = (bios_memmap*)BIOS_MEMORY_MAP_LOCATION;
+    BiosMemoryRegion* memmap = (BiosMemoryRegion*)BIOS_MEMORY_MAP_LOCATION;
 
     while(memmap->type != 0){
 
@@ -146,28 +147,13 @@ void* allocate_space_for_kernel(usize mem_size){
             return physical_to_virtual_pointer((void*)memmap->base_address);
         }
 
-        puts("0x");
-        putx64(memmap->base_address);
-        puts(" - 0x");
-        putx64(memmap->base_address + memmap->map_size);
-
-        switch (memmap->type)
-        {
-        case BIOS_MAP_FREE_MEMORY:
-            puts(" - FREE MEMORY (1)");
-            break;
-        default:
-            break;
-        }
-
-        putc('\n');
         memmap++;
     }
 
     return 0;
 }
 
-void* map_kernel(u8* elf_file, u8* code_buffer){
+void* map_kernel(u8* elf_file, u8* code_buffer, u64* kernel_size){
     ELF64FileHeader* elf_header = (ELF64FileHeader*)elf_file;
 
     u8* phdr_it = elf_file + elf_header->program_header_table_position;
@@ -210,6 +196,7 @@ void* map_kernel(u8* elf_file, u8* code_buffer){
                 map_4kb_page(vaddr, (u64)code_buffer+elf_phdr->offset-elf_phdr->align & (~0xFFFFE00000000FFF));
             }
 
+            *kernel_size += elf_phdr->memsz;
         }
 
         phdr_it += elf_header->program_header_table_entry_size;
@@ -222,6 +209,9 @@ void* map_kernel(u8* elf_file, u8* code_buffer){
 void cboot_main() {
     setup_interrupts();
     init_serial();
+
+    BootInfo bootinfo;
+    memset(&bootinfo, 0, sizeof(bootinfo));
 
     puts("Hello, World from the bootloader\n");
   
@@ -256,14 +246,16 @@ void cboot_main() {
     u8* kaddr = (u8*)allocate_space_for_kernel(268435456);
     memset(kaddr, 0, 268435456);
 
-    // we will use the bottom 96mb to load the elf file - and the remaining space will be used for the executable data
-    u8* exe = kaddr + 100663296;
-
     if(kaddr == 0){
         puts("Not Enough Memory to Load Kernel\n");
         halt();
     }
     //else
+
+    // we will use the top 96mb to load the elf file - and the bottom 160mb will hold the loaded executable data
+    u8* exe = kaddr;
+    kaddr = exe + 167772160;
+
 
     puts("Loading kernel\n");
 
@@ -286,6 +278,7 @@ void cboot_main() {
     }
     //else 
 
+    /*
     // calculate the md5sum of the kernel.elf file
     MD5_CTX ctx; u8 md5sum[16];
     MD5_Init(&ctx);
@@ -296,9 +289,11 @@ void cboot_main() {
     puts("md5sum(kernel.elf) = ");
     hexdump(md5sum, 16);
     putc('\n');
+    */
 
-    void* entry_point = map_kernel(kaddr, exe);
+    void* entry_point = map_kernel(kaddr, exe, &bootinfo.kernel_size);
 
+    /*
     puts("entry point = ");
     putx64((u64)entry_point);
     putc('\n');
@@ -306,13 +301,17 @@ void cboot_main() {
     puts("hexdump at entry point: ");
     hexdump((u8*)entry_point, 32);
     putc('\n');
+    */
 
     puts("KERNEL MAPPED, JUMPING TO KERNEL\n");
 
+    bootinfo.bios_memory_map_address = (BiosMemoryRegion*)0x500;
+    bootinfo.kernel_paddr = (u64)exe & ~0xFFFFE00000000000;
 
     // Jump to the kernel
-    void(*kmain)(void) = (void (*)())entry_point;
-    kmain();
+    void(*kmain)(BootInfo*) = (void (*)(BootInfo*))entry_point;
+    
+    kmain(&bootinfo);
 
     halt();
 }

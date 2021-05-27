@@ -1,10 +1,24 @@
 #include <mem.h>
 
-void memset(void* dst, u8 val, usize size){
-    u8* dst_it = (u8*)dst;
 
-    for(usize i = 0; i < size; i++){
-        dst_it[i] = val;
+void memset(void* dst, u8 val, usize size){
+    u8* dst8 = (u8*)dst;
+
+    // align to an 8 byte boundary
+    while((u64)dst8 % 8 != 0 && (u64)dst8 < (u64)dst + size) {*dst8++ = val;}
+
+    u64* dst64 = (u64*)dst8;
+
+    // do 64bit copies
+    while((u64)dst64+8 < (u64)dst+size){
+        *dst64++ = val;
+    }
+
+    dst8 = (u8*)dst64;
+    
+    //do the final byte copies
+    while((u64)dst8 < (u64)dst+size){
+        *dst8++ = val;
     }
 }
 
@@ -23,11 +37,26 @@ int memcmp(const void* s1, const void* s2, usize size){
 }
 
 void memcpy(void* dst, const void* src, usize size){
-    u8* dst_it = (u8*)dst;
-    u8* src_it = (u8*)src;
+    u8* dst8 = (u8*)dst;
+    u8* src8 = (u8*)src;
 
-    for(usize i = 0; i < size; i++){
-        dst_it[i] = src_it[i];
+    // align to an 8 byte boundary
+    while((u64)dst8 % 8 != 0 && (u64)dst8 < (u64)dst + size) {*dst8++ = *src8++;}
+
+    u64* dst64 = (u64*)dst8;
+    u64* src64 = (u64*)src8;
+
+    // do 64bit copies
+    while((u64)dst64+8 < (u64)dst+size){
+        *dst64++ = *src64++;
+    }
+
+    dst8 = (u8*)dst64;
+    src8 = (u8*)src64;
+
+    //do the final byte copies
+    while((u64)dst8 < (u64)dst+size){
+        *dst8++ = *src8++;
     }
 }
 

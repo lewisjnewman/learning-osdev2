@@ -8,7 +8,7 @@ typedef struct{
     u64 map_size;
     u32 type;
     u32 acpi3;
-} __attribute__((__packed__)) bios_memmap;
+} __attribute__((__packed__)) BiosMemoryRegion;
 
 
 //types of maps
